@@ -3,7 +3,7 @@ Code structure from open source project
 https://github.com/nl8590687/ASRT_SpeechRecognition
 The purpose is simple, from simple mnist, understand/learn ASRT code structure deeply.
 Function include load data/read data/train data
-Even add noise in the data. 
+Even add noise in the data. From test repult, when sigma=8, Add_gaussian_Noise, can get more than 95% accurate prediction. 
 
 1, show pics
 show clean pics
