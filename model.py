@@ -7,6 +7,7 @@ from keras.optimizers import SGD, Adadelta, Adam
 from keras.losses import categorical_crossentropy
 from keras.datasets import mnist
 from keras.utils import to_categorical
+from keras.utils import np_utils , plot_model
 
 import platform as plat
 import os, sys
@@ -96,7 +97,8 @@ class ModelMnist():
 		model.compile(loss=categorical_crossentropy,
 							optimizer=Adam(),
 							metrics=['accuracy'])
-		model.summary()
+		#model.summary()
+		plot_model(model, abspath + 'mnist_model'+os.sep + 'm' + ModelName + os.sep + './model.png',show_shapes=True)
 		
 		# captures output of softmax so we can decode the output during visualization
 		#test_func = K.function([input_data], [y_pred])
