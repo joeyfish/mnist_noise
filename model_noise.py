@@ -117,7 +117,7 @@ class ModelMnist():
 		
 		num_data = data.GetDataNum() # 获取数据的数量
 		
-		yielddatas = data.data_genetator(batch_size, IMG_LEN)
+		yielddatas = data.data_genetator_4_mnist_noise(batch_size, IMG_LEN)
 		
 		for epoch in range(epoch): # 迭代轮数
 			print('[running] train epoch %d .' % epoch)

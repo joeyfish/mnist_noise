@@ -38,17 +38,10 @@ class ModelMnist():
 		MS_OUTPUT_SIZE = 10
 		self.MS_OUTPUT_SIZE = MS_OUTPUT_SIZE # 神经网络最终输出的每一个字符向量维度的大小
 		self.label_max_string_length = 64
-		self._model =  self.CreateModel() 
-		self.base_model = self._model
+		self._model, self.base_model =  self.CreateModel() 
+		#self.base_model = self._model
 		self.datapath = datapath
 
-	'''
-	def CreateModel(self):
-
-		self._model, self.CreateModel() 
-		self.base_model = self._model
-	'''	
-		
 	def CreateModel(self):
 		input_data = Input(name='the_input', shape=(IMG_WIDTH, IMG_HEIGHT, 1))
 		
@@ -69,7 +62,7 @@ class ModelMnist():
 		layer_h6 = Dense(self.MS_OUTPUT_SIZE, use_bias=True, kernel_initializer='he_normal')(layer_h5) # 全连接层
 		
 		y_pred = Activation('softmax', name='Activation0')(layer_h6)
-		#model_data = Model(inputs = input_data, outputs = y_pred)
+		model_data = Model(inputs = input_data, outputs = y_pred)
 		'''
 		#model_data.summary()
 		
@@ -85,8 +78,15 @@ class ModelMnist():
 		
 		model = Model(inputs=[input_data, labels, input_length, label_length], outputs=loss_out)
 		'''
-		model = Model(inputs=[input_data], outputs=y_pred)
-		
+		y_2kinds = Input(name='y_2kinds', shape=[1],  dtype='int64')
+		#model = Model(inputs=[input_data, y_2kinds], outputs=y_pred)
+		#model = Model(inputs=[input_data], outputs=y_pred)
+		labels = Input(name='the_labels', shape=[10], dtype='int64')
+		input_length = Input(name='input_length', shape=[1], dtype='int64')
+		label_length = Input(name='label_length', shape=[1], dtype='int64')
+		#model = Model(inputs=[input_data, labels, input_length], outputs=y_pred)
+		#print(y_2kinds)
+		model = Model(inputs=[input_data, y_2kinds], outputs=y_pred)
 		# clipnorm seems to speeds up convergence
 		#sgd = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
 		#opt = Adadelta(lr = 0.01, rho = 0.95, epsilon = 1e-06)
@@ -97,14 +97,14 @@ class ModelMnist():
 		model.compile(loss=categorical_crossentropy,
 							optimizer=Adam(),
 							metrics=['accuracy'])
-		#model.summary()
+		model.summary()
 		plot_model(model, abspath + 'mnist_model'+os.sep + 'm' + ModelName + os.sep + './model.png',show_shapes=True)
 		
 		# captures output of softmax so we can decode the output during visualization
 		#test_func = K.function([input_data], [y_pred])
 		
 		#print('[*Info] Create Model Successful, Compiles Model Successful. ')
-		return model #, model_data
+		return model , model_data
 	
 	def restoreFromLastPoint(self, ModelName, save_step):
 		if(not os.path.exists('step'+ModelName+'.txt')):  
@@ -113,7 +113,11 @@ class ModelMnist():
 		f = open('step'+ModelName+'.txt','r')
 		txt_mode_name = f.read()
 		f.close()
-		self.LoadModel(txt_mode_name + '.model')
+		if os.path.exists(txt_mode_name + '.model'):
+			self.LoadModel(txt_mode_name + '.model')
+		else:
+			os.remove('step'+ModelName+'.txt')
+			return 0
 		print(txt_mode_name)
 		#for example, get mnist_model/m002/speech_model002_e_0_step_28000
 		#need return 28000 / save_step = 28000 / 500
@@ -131,6 +135,7 @@ class ModelMnist():
 			filename: 默认保存文件名，不含文件后缀名
 		'''
 		n_step = self.restoreFromLastPoint(ModelName, save_step)
+		#n_step = 0
 		data=DataMnist(datapath, type = 'train', addnoise = False)
 		
 		num_data = data.GetDataNum() # 获取数据的数量
@@ -251,7 +256,7 @@ class ModelMnist():
 		for i in range(batch_size):
 			x_in[i,0:len(data_input)] = data_input
 		
-		
+		#print(f'x_in:{x_in.shape}')
 		base_pred = self.base_model.predict(x = x_in)
 		
 		#print('base_pred:\n', base_pred)

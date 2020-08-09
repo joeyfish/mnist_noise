@@ -144,6 +144,7 @@ class DataMnist():
 		
 		#labels = np.array(labels, dtype = np.float)
 		labels = np.zeros((batch_size,1), dtype = np.float)
+		aax=np.array([0,1,2,3,4,5,6,7,8,9])
 		#print(input_length,len(input_length))
 		
 		#train_X, train_y = mnist.load_data()[0]
@@ -158,6 +159,7 @@ class DataMnist():
 			X = np.zeros((batch_size, 28, 28, 1), dtype = np.float32)
 			#y = np.zeros((batch_size, 64, self.SymbolNum), dtype=np.int16)
 			y = np.zeros((batch_size, predict_size), dtype=np.int16)
+			y_2kinds = [] #np.zeros((batch_size), dtype=np.int16) #test code, if smaller than 5, label 10, else label 11
 			
 			#generator = ImageCaptcha(width=width, height=height)
 			input_length = []
@@ -181,6 +183,9 @@ class DataMnist():
 				#print('data_labels长度:',len(data_labels))
 				#print(data_labels)
 				y[i,0:len(data_labels)] = data_labels
+				#y_2kinds[i] = np.sum(data_labels*aax)//5
+				y_2kinds.append(np.sum(data_labels*aax)//5)
+				#print(data_labels, y2[i])
 				#print(i,y[i].shape)
 				#y[i] = y[i].T
 				#print(i,y[i].shape)
@@ -188,13 +193,60 @@ class DataMnist():
 			
 			label_length = np.matrix(label_length)
 			input_length = np.array([input_length]).T
+			y_2kinds = np.array([y_2kinds]).T
 			#input_length = np.array(input_length)
-			#print('input_length:\n',input_length)
+			#print('y_2kinds:\n',y_2kinds)
 			#X=X.reshape(batch_size, audio_length, 200, 1)
 			#yield [X, y, input_length, label_length ], labels
-			yield [X], y
+			yield [X,y_2kinds], y
+			#yield [X, label_length], y
+			#yield [X, y, input_length ], y
 		pass
 		
+
+	def data_genetator_4_mnist_noise(self, batch_size=100, img_length = 28*28):
+		'''
+		数据生成器函数，用于Keras的generator_fit训练
+		batch_size: 一次产生的数据量
+		需要再修改。。。
+		'''
+		
+		#labels = np.array(labels, dtype = np.float)
+		labels = np.zeros((batch_size,1), dtype = np.float)
+		aax=np.array([0,1,2,3,4,5,6,7,8,9])
+		#print(input_length,len(input_length))
+		
+
+		
+		
+		
+		while True:
+			X = np.zeros((batch_size, 28, 28, 1), dtype = np.float32)
+			y = np.zeros((batch_size, predict_size), dtype=np.int16)
+			y_2kinds = [] #np.zeros((batch_size), dtype=np.int16) #test code, if smaller than 5, label 10, else label 11
+			
+			input_length = []
+			label_length = []
+			
+			
+			
+			for i in range(batch_size):
+				ran_num = random.randint(0,self.DataNum - 1) # 获取一个随机数
+				data_input, data_labels = self.GetData(ran_num)  # 通过随机数取一个数据
+				
+				input_length.append(data_input.shape[0])
+				
+				X[i,0:len(data_input)] = data_input
+				y[i,0:len(data_labels)] = data_labels
+				label_length.append([len(data_labels)])
+			
+			label_length = np.matrix(label_length)
+			input_length = np.array([input_length]).T
+			y_2kinds = np.array([y_2kinds]).T
+			yield [X], y
+		pass
+
+
 	def GetSymbolList(self):
 		'''
 		加载拼音符号列表，用于标记符号
