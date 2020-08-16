@@ -29,7 +29,7 @@ IMG_LEN = IMG_WIDTH * IMG_HEIGHT
 #kernel_size = (5, 5)
 kernel_size = (3, 3)
 
-defsave_step = 500
+defsave_step = 4
 
 #reference URL:https://blog.csdn.net/briblue/article/details/80398369 
 #ref 基于Keras+CNN的MNIST数据集手写数字分类 - 简书  https://www.jianshu.com/p/3a8b310227e6
@@ -38,10 +38,10 @@ class ModelMnist():
 		MS_OUTPUT_SIZE = 10
 		self.MS_OUTPUT_SIZE = MS_OUTPUT_SIZE # 神经网络最终输出的每一个字符向量维度的大小
 		self.label_max_string_length = 64
-		self._model, self.base_model =  self.CreateModel() 
+		self._model =  self.CreateModel() 
 		#self.base_model = self._model
 		self.datapath = datapath
-
+	
 	def CreateModel(self):
 		input_data = Input(name='the_input', shape=(IMG_WIDTH, IMG_HEIGHT, 1))
 		
@@ -49,62 +49,45 @@ class ModelMnist():
 		#layer_h1 = Dropout(0.05)(layer_h1)
 		layer_h2 = Conv2D(64, kernel_size, use_bias=True, activation='relu', padding='same', kernel_initializer='he_normal')(layer_h1) # 卷积层
 		layer_h3 = MaxPooling2D(pool_size=2, strides=None, padding="valid")(layer_h2) # 池化层
-		#layer_h3 = Dropout(0.2)(layer_h2) # 随机中断部分神经网络连接，防止过拟合
 		
-		#test=Model(inputs = input_data, outputs = layer_h12)
-		#test.summary()
-		
-		#layer_h4 = Reshape(64*2)(layer_h3) #Reshape层
 		layer_h4 = Flatten()(layer_h3)
-		#layer_h4 = Dropout(0.3)(layer_h4)
 		layer_h5 = Dense(64*2, activation="relu", use_bias=True, kernel_initializer='he_normal')(layer_h4) # 全连接层
-		#layer_h5 = Dropout(0.3)(layer_h17)
-		layer_h6 = Dense(self.MS_OUTPUT_SIZE, use_bias=True, kernel_initializer='he_normal')(layer_h5) # 全连接层
+		num_output = Dense(self.MS_OUTPUT_SIZE, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='num_output')(layer_h5) # 全连接层
+		layer_h5 = Dense(64*2, activation="relu", use_bias=True, kernel_initializer='he_normal')(layer_h4) # 全连接层
+		bigger5_output = Dense(1, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='bigger5_output')(layer_h5) # 全连接层
+
+
+		layer_h5 = Dense(64*2, activation="relu", use_bias=True, kernel_initializer='he_normal')(layer_h4) # 全连接层
+		odd_even_output = Dense(1, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='odd_even_output')(layer_h5) # 全连接层
 		
-		y_pred = Activation('softmax', name='Activation0')(layer_h6)
-		model_data = Model(inputs = input_data, outputs = y_pred)
-		'''
-		#model_data.summary()
+		#y_2kinds = Input(name='y_2kinds', shape=[1],  dtype='int64')
+		#y_odds = Input(name='y_odds', shape=[1],  dtype='int64')
+		model = Model(inputs=input_data, outputs=[num_output,bigger5_output,odd_even_output])
+
+		#Keras多输出模型构建 - 简书
+		#https://www.jianshu.com/p/6bcd63a0165c
+		def loss_a(y_true, y_pred):
+			return categorical_crossentropy(y_true, y_pred)
 		
-		labels = Input(name='the_labels', shape=[self.MS_OUTPUT_SIZE], dtype='int')
-		input_length = Input(name='input_length', shape=[1], dtype='int')
-		label_length = Input(name='label_length', shape=[1], dtype='int')
-		# Keras doesn't currently support loss funcs with extra parameters
-		# so CTC loss is implemented in a lambda layer
+		def loss_b(y_true, y_pred):
+			return categorical_crossentropy(y_true, y_pred)
 		
-		#loss_out = Lambda(self.ctc_lambda_func, output_shape=(1,), name='ctc')([y_pred, labels, input_length, label_length])
+		def loss_c(y_true, y_pred):
+			return categorical_crossentropy(y_true, y_pred)
 		
-		
-		
-		model = Model(inputs=[input_data, labels, input_length, label_length], outputs=loss_out)
-		'''
-		y_2kinds = Input(name='y_2kinds', shape=[1],  dtype='int64')
-		#model = Model(inputs=[input_data, y_2kinds], outputs=y_pred)
-		#model = Model(inputs=[input_data], outputs=y_pred)
-		labels = Input(name='the_labels', shape=[10], dtype='int64')
-		input_length = Input(name='input_length', shape=[1], dtype='int64')
-		label_length = Input(name='label_length', shape=[1], dtype='int64')
-		#model = Model(inputs=[input_data, labels, input_length], outputs=y_pred)
-		#print(y_2kinds)
-		model = Model(inputs=[input_data, y_2kinds], outputs=y_pred)
-		# clipnorm seems to speeds up convergence
-		#sgd = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=5)
-		#opt = Adadelta(lr = 0.01, rho = 0.95, epsilon = 1e-06)
-		#opt = Adam(lr = 0.001, beta_1 = 0.9, beta_2 = 0.999, decay = 0.0, epsilon = 10e-8)
-		#opt = Lambda(lambda x: tf.nn.l2_normalize(x,axis=-1))(x)
-		#model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer=sgd)
-		#model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer = opt)
-		model.compile(loss=categorical_crossentropy,
-							optimizer=Adam(),
-							metrics=['accuracy'])
+		losses = {'num_output': loss_a,
+				'bigger5_output': loss_b,
+				'odd_even_output': loss_c,
+					}
+
+		model.compile(optimizer=Adam(),
+						loss=losses,
+						loss_weights={'num_output': 2., 'bigger5_output': 1.5, 'odd_even_output': 1.},
+						metrics={'num_output': 'accuracy', 'bigger5_output': 'accuracy', 'odd_even_output': 'accuracy'})
 		model.summary()
 		plot_model(model, abspath + 'mnist_model'+os.sep + 'm' + ModelName + os.sep + './model.png',show_shapes=True)
 		
-		# captures output of softmax so we can decode the output during visualization
-		#test_func = K.function([input_data], [y_pred])
-		
-		#print('[*Info] Create Model Successful, Compiles Model Successful. ')
-		return model , model_data
+		return model
 	
 	def restoreFromLastPoint(self, ModelName, save_step):
 		if(not os.path.exists('step'+ModelName+'.txt')):  
@@ -191,7 +174,7 @@ class ModelMnist():
 			
 			txt = '测试报告\n模型编号 ' + ModelName + '\n\n'
 			for i in range(data_count):
-				data_input, data_labels = data.GetData((ran_num + i) % num_data, 2)  # 从随机数开始连续向后取一定数量数据
+				data_input, data_labels, y_2kind, y_odd = data.GetData((ran_num + i) % num_data, 2)  # 从随机数开始连续向后取一定数量数据
 				
 				# 数据格式出错处理 开始
 				# 当输入的wav文件长度过长时自动跳过该文件，转而使用下一个wav文件来运行
@@ -199,7 +182,7 @@ class ModelMnist():
 				while(data_input.shape[0] > IMG_LEN):
 					print('*[Error]','wave data lenghth of num',(ran_num + i) % num_data, 'is too long.','\n A Exception raise when test Speech Model.')
 					num_bias += 1
-					data_input, data_labels = data.GetData((ran_num + i + num_bias) % num_data)  # 从随机数开始连续向后取一定数量数据
+					data_input, data_labels, y_2kind, y_odd = data.GetData((ran_num + i + num_bias) % num_data)  # 从随机数开始连续向后取一定数量数据
 				# 数据格式出错处理 结束
 				
 				pre = self.Predict(data_input, data_input.shape[0] // 8)
@@ -257,7 +240,7 @@ class ModelMnist():
 			x_in[i,0:len(data_input)] = data_input
 		
 		#print(f'x_in:{x_in.shape}')
-		base_pred = self.base_model.predict(x = x_in)
+		base_pred = self.model.predict_on_batch(x = x_in)
 		
 		#print('base_pred:\n', base_pred)
 		
@@ -276,11 +259,15 @@ class ModelMnist():
 		#print('base_pred:',base_pred)
 		maxv = 0
 		imax = 0
-		for j in range(base_pred.shape[1]):
-			if maxv < base_pred[0][j]:
-				maxv = base_pred[0][j]
+		for j in range(base_pred[0].shape[1]):
+			if maxv < base_pred[0][0][j]:
+				maxv = base_pred[0][0][j]
 				imax = j 
+		y_2kinds = base_pred[1][0][0]
+		y_odd = base_pred[1][0][0]
 		print('imax:',imax)
+		print('y_2kinds:',y_2kinds)
+		print('y_odd:',y_odd)
 		#base_pred =base_pred[:, 2:, :]
 		
 		#r = K.ctc_decode(base_pred, in_len, greedy = True, beam_width=100, top_paths=1)
@@ -296,8 +283,8 @@ class ModelMnist():
 		#print(r2)
 		
 		#r1=r1[0]
-		r = base_pred[0]
-		for j in range(base_pred.shape[1]):
+		r = base_pred[0][0]
+		for j in range(base_pred[0].shape[1]):
 			if j == imax:
 				r[j] = 1
 			else:
@@ -310,17 +297,17 @@ class ModelMnist():
 		加载模型参数
 		'''
 		self._model.load_weights(filename)
-		self.base_model.load_weights(filename + '.base')
+		#self.base_model.load_weights(filename + '.base')
 
 	def SaveModel(self,filename = abspath + 'mnist_model/m'+ModelName+'/speech_model'+ModelName,comment=''):
 		'''
 		保存模型参数
 		'''
 		self._model.save_weights(filename + comment + '.model')
-		self.base_model.save_weights(filename + comment + '.model.base')
+		#self.model.save_weights(filename + comment + '.model.base')
 		# 需要安装 hdf5 模块
 		self._model.save(filename + comment + '.h5')
-		self.base_model.save(filename + comment + '.base.h5')
+		#self.base_model.save(filename + comment + '.base.h5')
 		f = open('step'+ModelName+'.txt','w')
 		f.write(filename+comment)
 		f.close()
@@ -418,10 +405,7 @@ if(__name__=='__main__'):
 	ms = ModelMnist(datapath)
 	##test code##############
 	#ms.restoreFromLastPoint(ModelName, defsave_step)
-	#exit(1)
-	#########################
-	#ms.TrainModel(datapath, epoch = 8, batch_size = 100, save_step = 500) final value here
-	ms.TrainModel(datapath, epoch = 8, batch_size = 100, save_step = defsave_step)
+	ms.TrainModel(datapath, epoch = 4, batch_size = 4, save_step = defsave_step)
 
 	###########################################
 	train_X, train_y = mnist.load_data()[0]
@@ -429,17 +413,8 @@ if(__name__=='__main__'):
 	train_X = train_X.astype('float32')
 	train_X /= 255
 
-	#(Pdb) p train_y
-	#array([5, 0, 4, ..., 5, 6, 8], dtype=uint8)	, keras mnist label data is different than tf
-	#(Pdb) p train_y.shape
-	#(60000,)	
 	train_y = to_categorical(train_y, 10)
-	#(Pdb) p train_y.shape
-	#(60000, 10)
-	#(Pdb) p train_y[0]
-	#array([0., 0., 0., 0., 0., 1., 0., 0., 0., 0.]) now it is same as tf's mnist data
-	#(Pdb) p train_y[1]
-	#array([1., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+
 	
 	batch_size = 100
 	epochs = 8

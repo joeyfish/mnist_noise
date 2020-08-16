@@ -51,6 +51,8 @@ class DataMnist():
 		self.LoadDataList(addnoise)
 		
 		self.LoadToMem = LoadToMem
+		
+		self.getdata_num = 0
 		pass
 	
 	def LoadDataList(self, addnoise):
@@ -93,7 +95,6 @@ class DataMnist():
 			DataNum = self.mnist_data_train_images.shape[0]
 		else:	
 			DataNum = self.mnist_data_test_images.shape[0]
-
 		return DataNum
 		
 		
@@ -106,6 +107,7 @@ class DataMnist():
 		返回：
 			三个包含wav特征矩阵的神经网络输入值，和一个标定的类别矩阵神经网络输出值
 		'''
+		self.getdata_num  += 1
 		if (show_plt == PRTINT_NSTART):
 			print('get data ', n_start)
 		if self.type == 'train':	
@@ -124,9 +126,23 @@ class DataMnist():
 			data_label = self.mnist_data.train.labels[n_start]
 		else:	
 			data_label = self.mnist_data.test.labels[n_start]
+		#aax=np.array([9,8,7,6,5,4,3,2,1,0])
+		aax=np.array([0,1,2,3,4,5,6,7,8,9])
+		#print('aax=', aax)
+		value = np.sum(data_label*aax)
+		y_2kinds = value//5
+		y_odd = (value%2)!=0
 		if show_plt == 1:
 			print(data_label)
-		return image, data_label
+		debugflaghere = False #True
+		if debugflaghere:
+			print('===============')
+			print('get=', self.getdata_num)
+			print('value=', value)
+			print('data_label=', data_label)
+			print('y_2kinds=', y_2kinds)
+			print('y_odd=', y_odd)
+		return image, data_label, y_2kinds, y_odd
 	
 	def data_genetator(self, batch_size=100, img_length = 28*28):
 		'''
@@ -158,8 +174,9 @@ class DataMnist():
 		while True:
 			X = np.zeros((batch_size, 28, 28, 1), dtype = np.float32)
 			#y = np.zeros((batch_size, 64, self.SymbolNum), dtype=np.int16)
-			y = np.zeros((batch_size, predict_size), dtype=np.int16)
-			y_2kinds = [] #np.zeros((batch_size), dtype=np.int16) #test code, if smaller than 5, label 10, else label 11
+			y = np.zeros((batch_size, predict_size), dtype=np.int64)
+			y_2kinds = np.zeros((batch_size, 1), dtype=np.int64)
+			y_odds = np.zeros((batch_size, 1), dtype=np.int64)
 			
 			#generator = ImageCaptcha(width=width, height=height)
 			input_length = []
@@ -171,7 +188,7 @@ class DataMnist():
 				ran_num = random.randint(0,self.DataNum - 1) # 获取一个随机数
 				#if (i == 0):
 				#	print("first ran_num= %d" % (ran_num))
-				data_input, data_labels = self.GetData(ran_num)  # 通过随机数取一个数据
+				data_input, data_labels, y_2kind, y_odd = self.GetData(ran_num)  # 通过随机数取一个数据
 				#print(data_labels)
 				#data_input, data_labels = self.GetData((ran_num + i) % self.DataNum)  # 从随机数开始连续向后取一定数量数据
 				
@@ -183,24 +200,20 @@ class DataMnist():
 				#print('data_labels长度:',len(data_labels))
 				#print(data_labels)
 				y[i,0:len(data_labels)] = data_labels
-				#y_2kinds[i] = np.sum(data_labels*aax)//5
-				y_2kinds.append(np.sum(data_labels*aax)//5)
+				y_2kinds[i] = y_2kind
+				y_odds[i] = y_odd
 				#print(data_labels, y2[i])
 				#print(i,y[i].shape)
 				#y[i] = y[i].T
 				#print(i,y[i].shape)
-				label_length.append([len(data_labels)])
+				#label_length.append([len(data_labels)])
 			
-			label_length = np.matrix(label_length)
-			input_length = np.array([input_length]).T
-			y_2kinds = np.array([y_2kinds]).T
+			#label_length = np.array(label_length)
 			#input_length = np.array(input_length)
-			#print('y_2kinds:\n',y_2kinds)
-			#X=X.reshape(batch_size, audio_length, 200, 1)
-			#yield [X, y, input_length, label_length ], labels
-			yield [X,y_2kinds], y
-			#yield [X, label_length], y
-			#yield [X, y, input_length ], y
+			y_2kinds = np.array(y_2kinds)
+			y_odds = np.array(y_odds)
+			yield X, [y,y_2kinds,y_odds]
+			#images, y, y_2kinds, y_odds = [], [], [], []
 		pass
 		
 
@@ -379,14 +392,25 @@ if(__name__=='__main__'):
 	print("data ran_num=%d" % (ran_num))
 	if argc == 2:
 		l.showpics(ran_num)
-	l.GetData(ran_num, 1)
+	data_input, data_labels, y_2kind, y_odd = l.GetData(ran_num, 1)
+	print('data_input.shape=',data_input.shape)
+	print('data_labels=',data_labels)
+	print('y_2kind=',y_2kind)
+	print('y_odd=',y_odd)
 	msg=input("hello1")
-	aa=l.data_genetator()
+	aa=l.data_genetator(15)
 	msg=input("hello2")
-	for i in aa:
-		a,b=i
-	print("size of aa=%d" % (len(aa)))
+	for i, im in zip(range(100),aa):
+		a,b=im
+	#print("size of aa=%d" % (len(aa)))
 	msg=input("hello3")
-	print(a,b)
+	#[y,y_2kinds,y_odds]
+	print('len=',len(b))
+	print('shape0=',b[0].shape)
+	print('shape1=',b[1].shape)
+	print('shape2=',b[2].shape)
+	print('y=',b[0])
+	print('2=',b[1])
+	print('o=',b[2])
 	pass
 	
