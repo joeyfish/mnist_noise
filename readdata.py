@@ -245,7 +245,7 @@ class DataMnist():
 			
 			for i in range(batch_size):
 				ran_num = random.randint(0,self.DataNum - 1) # 获取一个随机数
-				data_input, data_labels = self.GetData(ran_num)  # 通过随机数取一个数据
+				data_input, data_labels, y_2kind, y_odd= self.GetData(ran_num)  # 通过随机数取一个数据
 				
 				input_length.append(data_input.shape[0])
 				

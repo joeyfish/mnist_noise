@@ -95,7 +95,11 @@ class ModelMnist():
 		f = open('step'+ModelName+'.txt','r')
 		txt_mode_name = f.read()
 		f.close()
-		self.LoadModel(txt_mode_name + '.model')
+		if os.path.exists(txt_mode_name + '.model'):
+			self.LoadModel(txt_mode_name + '.model')
+		else:
+			os.remove('step'+ModelName+'.txt')
+			return 0
 		print(txt_mode_name)
 		#for example, get mnist_model/m002/speech_model002_e_0_step_28000
 		#need return 28000 / save_step = 28000 / 500
@@ -167,7 +171,7 @@ class ModelMnist():
 			
 			txt = '测试报告\n模型编号 ' + ModelName + '\n\n'
 			for i in range(data_count):
-				data_input, data_labels = data.GetData((ran_num + i) % num_data, 2)  # 从随机数开始连续向后取一定数量数据
+				data_input, data_labels, y_2kind, y_odd = data.GetData((ran_num + i) % num_data, 2)  # 从随机数开始连续向后取一定数量数据
 				
 				# 数据格式出错处理 开始
 				# 当输入的wav文件长度过长时自动跳过该文件，转而使用下一个wav文件来运行
@@ -175,7 +179,7 @@ class ModelMnist():
 				while(data_input.shape[0] > IMG_LEN):
 					print('*[Error]','wave data lenghth of num',(ran_num + i) % num_data, 'is too long.','\n A Exception raise when test Speech Model.')
 					num_bias += 1
-					data_input, data_labels = data.GetData((ran_num + i + num_bias) % num_data)  # 从随机数开始连续向后取一定数量数据
+					data_input, data_labels, y_2kind, y_odd = data.GetData((ran_num + i + num_bias) % num_data)  # 从随机数开始连续向后取一定数量数据
 				# 数据格式出错处理 结束
 				
 				pre = self.Predict(data_input, data_input.shape[0] // 8)
