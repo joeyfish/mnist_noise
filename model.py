@@ -8,6 +8,7 @@ from keras.losses import categorical_crossentropy
 from keras.datasets import mnist
 from keras.utils import to_categorical
 from keras.utils import np_utils , plot_model
+from tensorflow.keras.callbacks import TensorBoard
 
 import platform as plat
 import os, sys
@@ -28,8 +29,12 @@ IMG_HEIGHT = 28
 IMG_LEN = IMG_WIDTH * IMG_HEIGHT
 #kernel_size = (5, 5)
 kernel_size = (3, 3)
+flagquick = False
 
-defsave_step = 500
+if flagquick:
+	defsave_step = 50
+else:
+	defsave_step = 500
 
 #reference URL:https://blog.csdn.net/briblue/article/details/80398369 
 #ref 基于Keras+CNN的MNIST数据集手写数字分类 - 简书  https://www.jianshu.com/p/3a8b310227e6
@@ -124,6 +129,13 @@ class ModelMnist():
 		num_data = data.GetDataNum() # 获取数据的数量
 		
 		yielddatas = data.data_genetator(batch_size, IMG_LEN)
+
+		#两步轻松实现在Keras中使用Tensorboard - 简书
+		#https: // www.jianshu.com / p / b0e98ee80a49
+		NAME = 'mnist-CNN-{}'.format(time.asctime( time.localtime(time.time()) ))
+		tensorboard = TensorBoard(log_dir='mnist_model'+os.sep + 'logs' + os.sep + '{}'.format(NAME))
+		#tensorboard --logdir ./mnist_model/logs
+
 		
 		for epoch in range(epoch): # 迭代轮数
 			print('[running] train epoch %d .' % epoch)
@@ -134,7 +146,7 @@ class ModelMnist():
 					# data_genetator是一个生成器函数
 					
 					#self._model.fit_generator(yielddatas, save_step, nb_worker=2)
-					self._model.fit_generator(yielddatas, save_step)
+					self._model.fit_generator(yielddatas, save_step, callbacks=[tensorboard])
 					n_step += 1
 				except StopIteration:
 					print('[error] generator error. please check data format.')
@@ -222,6 +234,17 @@ class ModelMnist():
 			
 		except StopIteration:
 			print('[Error] Model Test Error. please check data format.')
+	
+	def get2kindsstr(self, a1, a2):
+		if a1 > a2:
+			return "smaller than 5"
+		return "bigger than 5"
+
+	#y_odds[0] = 1 if number is even.
+	def getoddstr(self, a1, a2):
+		if a1 > a2:
+			return "even number"
+		return "odd number"
 
 	def Predict(self, data_input, input_len):
 		'''
@@ -266,8 +289,8 @@ class ModelMnist():
 		y_2kinds = base_pred[1][0]
 		y_odd = base_pred[1][0]
 		print('imax:',imax)
-		print('y_2kinds:',y_2kinds)
-		print('y_odd:',y_odd)
+		print('y_2kinds:', self.get2kindsstr(y_2kinds[0], y_2kinds[1]))
+		print('y_odd:', self.getoddstr(y_odd[0], y_odd[1]))
 		#base_pred =base_pred[:, 2:, :]
 		
 		#r = K.ctc_decode(base_pred, in_len, greedy = True, beam_width=100, top_paths=1)
@@ -406,7 +429,10 @@ if(__name__=='__main__'):
 	##test code##############
 	#ms.restoreFromLastPoint(ModelName, defsave_step)
 	#ms.TrainModel(datapath, epoch = 8, batch_size = 100, save_step = 500) final value here
-	ms.TrainModel(datapath, epoch = 8, batch_size = 100, save_step = defsave_step)
+	if flagquick:
+		ms.TrainModel(datapath, epoch = 8, batch_size = 10, save_step = defsave_step)
+	else:
+		ms.TrainModel(datapath, epoch = 8, batch_size = 100, save_step = defsave_step)
 	###########################################
 	train_X, train_y = mnist.load_data()[0]
 	train_X = train_X.reshape(-1, 28, 28, 1)
