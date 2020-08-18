@@ -29,7 +29,7 @@ IMG_LEN = IMG_WIDTH * IMG_HEIGHT
 #kernel_size = (5, 5)
 kernel_size = (3, 3)
 
-defsave_step = 4
+defsave_step = 500
 
 #reference URL:https://blog.csdn.net/briblue/article/details/80398369 
 #ref 基于Keras+CNN的MNIST数据集手写数字分类 - 简书  https://www.jianshu.com/p/3a8b310227e6
@@ -54,11 +54,11 @@ class ModelMnist():
 		layer_h5 = Dense(64*2, activation="relu", use_bias=True, kernel_initializer='he_normal')(layer_h4) # 全连接层
 		num_output = Dense(self.MS_OUTPUT_SIZE, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='num_output')(layer_h5) # 全连接层
 		layer_h5 = Dense(64*2, activation="relu", use_bias=True, kernel_initializer='he_normal')(layer_h4) # 全连接层
-		bigger5_output = Dense(1, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='bigger5_output')(layer_h5) # 全连接层
+		bigger5_output = Dense(2, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='bigger5_output')(layer_h5) # 全连接层
 
 
 		layer_h5 = Dense(64*2, activation="relu", use_bias=True, kernel_initializer='he_normal')(layer_h4) # 全连接层
-		odd_even_output = Dense(1, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='odd_even_output')(layer_h5) # 全连接层
+		odd_even_output = Dense(2, use_bias=True, kernel_initializer='he_normal', activation='softmax', name='odd_even_output')(layer_h5) # 全连接层
 		
 		#y_2kinds = Input(name='y_2kinds', shape=[1],  dtype='int64')
 		#y_odds = Input(name='y_odds', shape=[1],  dtype='int64')
@@ -263,8 +263,8 @@ class ModelMnist():
 			if maxv < base_pred[0][0][j]:
 				maxv = base_pred[0][0][j]
 				imax = j 
-		y_2kinds = base_pred[1][0][0]
-		y_odd = base_pred[1][0][0]
+		y_2kinds = base_pred[1][0]
+		y_odd = base_pred[1][0]
 		print('imax:',imax)
 		print('y_2kinds:',y_2kinds)
 		print('y_odd:',y_odd)
@@ -405,8 +405,8 @@ if(__name__=='__main__'):
 	ms = ModelMnist(datapath)
 	##test code##############
 	#ms.restoreFromLastPoint(ModelName, defsave_step)
-	ms.TrainModel(datapath, epoch = 4, batch_size = 4, save_step = defsave_step)
-
+	#ms.TrainModel(datapath, epoch = 8, batch_size = 100, save_step = 500) final value here
+	ms.TrainModel(datapath, epoch = 8, batch_size = 100, save_step = defsave_step)
 	###########################################
 	train_X, train_y = mnist.load_data()[0]
 	train_X = train_X.reshape(-1, 28, 28, 1)

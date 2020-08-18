@@ -130,8 +130,10 @@ class DataMnist():
 		aax=np.array([0,1,2,3,4,5,6,7,8,9])
 		#print('aax=', aax)
 		value = np.sum(data_label*aax)
-		y_2kinds = value//5
-		y_odd = (value%2)!=0
+		y_2kinds = np.zeros(2, dtype = np.float)
+		y_2kinds[int(value//5)] = 1.
+		y_odds = np.zeros(2, dtype = np.float)
+		y_odds[int(value%2)] = 1.   #y_odds[0] = 1 if number is even.
 		if show_plt == 1:
 			print(data_label)
 		debugflaghere = False #True
@@ -142,7 +144,7 @@ class DataMnist():
 			print('data_label=', data_label)
 			print('y_2kinds=', y_2kinds)
 			print('y_odd=', y_odd)
-		return image, data_label, y_2kinds, y_odd
+		return image, data_label, y_2kinds, y_odds
 	
 	def data_genetator(self, batch_size=100, img_length = 28*28):
 		'''
@@ -175,8 +177,8 @@ class DataMnist():
 			X = np.zeros((batch_size, 28, 28, 1), dtype = np.float32)
 			#y = np.zeros((batch_size, 64, self.SymbolNum), dtype=np.int16)
 			y = np.zeros((batch_size, predict_size), dtype=np.int64)
-			y_2kinds = np.zeros((batch_size, 1), dtype=np.int64)
-			y_odds = np.zeros((batch_size, 1), dtype=np.int64)
+			y_2kinds = np.zeros((batch_size, 2), dtype=np.int64)
+			y_odds = np.zeros((batch_size, 2), dtype=np.int64) 
 			
 			#generator = ImageCaptcha(width=width, height=height)
 			input_length = []
@@ -200,8 +202,8 @@ class DataMnist():
 				#print('data_labels长度:',len(data_labels))
 				#print(data_labels)
 				y[i,0:len(data_labels)] = data_labels
-				y_2kinds[i] = y_2kind
-				y_odds[i] = y_odd
+				y_2kinds[i,0:len(y_2kind)] = y_2kind
+				y_odds[i,0:len(y_odd)] = y_odd
 				#print(data_labels, y2[i])
 				#print(i,y[i].shape)
 				#y[i] = y[i].T
@@ -213,6 +215,7 @@ class DataMnist():
 			y_2kinds = np.array(y_2kinds)
 			y_odds = np.array(y_odds)
 			yield X, [y,y_2kinds,y_odds]
+			#return X, [y,y_2kinds,y_odds]
 			#images, y, y_2kinds, y_odds = [], [], [], []
 		pass
 		
@@ -394,9 +397,9 @@ if(__name__=='__main__'):
 		l.showpics(ran_num)
 	data_input, data_labels, y_2kind, y_odd = l.GetData(ran_num, 1)
 	print('data_input.shape=',data_input.shape)
-	print('data_labels=',data_labels)
-	print('y_2kind=',y_2kind)
-	print('y_odd=',y_odd)
+	print('data_labels=\n',data_labels)
+	print('y_2kind=\n',y_2kind)
+	print('y_odd=\n',y_odd)
 	msg=input("hello1")
 	aa=l.data_genetator(15)
 	msg=input("hello2")
@@ -409,8 +412,8 @@ if(__name__=='__main__'):
 	print('shape0=',b[0].shape)
 	print('shape1=',b[1].shape)
 	print('shape2=',b[2].shape)
-	print('y=',b[0])
-	print('2=',b[1])
-	print('o=',b[2])
+	print('y    =',b[0])
+	print('2kind=',b[1])
+	print('oddev=',b[2])
 	pass
 	
