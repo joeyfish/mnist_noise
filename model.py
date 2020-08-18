@@ -241,10 +241,22 @@ class ModelMnist():
 		return "bigger than 5"
 
 	#y_odds[0] = 1 if number is even.
-	def getoddstr(self, a1, a2):
+	def getoddstr(self, number, a1, a2):
+		color_str_head_p = '\033[1;40;35m'
+		color_str_tail = '\033[0m'
+		evenflag = (number % 2) == 0
+		correct = False
+		if evenflag and a1 > a2:
+			correct = True
+			color_str_head_p = ''
+			color_str_tail = ''
+		if evenflag == False and a1 < a2:
+			correct = True
+			color_str_head_p = ''
+			color_str_tail = ''
 		if a1 > a2:
-			return "even number"
-		return "odd number"
+			return color_str_head_p + "{} is even number".format(number) + color_str_tail
+		return color_str_head_p + "{} is odd number".format(number) + color_str_tail
 
 	def Predict(self, data_input, input_len):
 		'''
@@ -287,10 +299,11 @@ class ModelMnist():
 				maxv = base_pred[0][0][j]
 				imax = j 
 		y_2kinds = base_pred[1][0]
-		y_odd = base_pred[1][0]
+		y_odd = base_pred[2][0]
+		print('================================')
 		print('imax:',imax)
 		print('y_2kinds:', self.get2kindsstr(y_2kinds[0], y_2kinds[1]))
-		print('y_odd:', self.getoddstr(y_odd[0], y_odd[1]))
+		print('y_odd:', self.getoddstr(imax, y_odd[0], y_odd[1]))
 		#base_pred =base_pred[:, 2:, :]
 		
 		#r = K.ctc_decode(base_pred, in_len, greedy = True, beam_width=100, top_paths=1)
