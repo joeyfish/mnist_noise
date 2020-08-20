@@ -219,6 +219,79 @@ class DataMnist():
 			#images, y, y_2kinds, y_odds = [], [], [], []
 		pass
 		
+	def data_genetator_only_big5(self, batch_size=100, img_length = 28*28):
+		'''
+		数据生成器函数，用于Keras的generator_fit训练
+		batch_size: 一次产生的数据量
+		需要再修改。。。
+		'''
+		
+		#labels = []
+		#for i in range(0,batch_size):
+		#	#input_length.append([1500])
+		#	labels.append([0.0])
+		
+		
+		
+		#labels = np.array(labels, dtype = np.float)
+		labels = np.zeros((batch_size,1), dtype = np.float)
+		aax=np.array([0,1,2,3,4,5,6,7,8,9])
+		#print(input_length,len(input_length))
+		
+		#train_X, train_y = mnist.load_data()[0]
+		#train_X = train_X.reshape(-1, 28, 28, 1)
+		#train_X = train_X.astype('float32')
+		#train_X /= 255
+		#train_y = to_categorical(train_y, 10)
+		
+		
+		
+		while True:
+			X = np.zeros((batch_size, 28, 28, 1), dtype = np.float32)
+			#y = np.zeros((batch_size, 64, self.SymbolNum), dtype=np.int16)
+			y = np.zeros((batch_size, predict_size), dtype=np.int64)
+			y_2kinds = np.zeros((batch_size, 2), dtype=np.int64)
+			y_odds = np.zeros((batch_size, 2), dtype=np.int64) 
+			
+			#generator = ImageCaptcha(width=width, height=height)
+			input_length = []
+			label_length = []
+			
+			
+			
+			for i in range(batch_size):
+				ran_num = random.randint(0,self.DataNum - 1) # 获取一个随机数
+				#if (i == 0):
+				#	print("first ran_num= %d" % (ran_num))
+				data_input, data_labels, y_2kind, y_odd = self.GetData(ran_num)  # 通过随机数取一个数据
+				#print(data_labels)
+				#data_input, data_labels = self.GetData((ran_num + i) % self.DataNum)  # 从随机数开始连续向后取一定数量数据
+				
+				input_length.append(data_input.shape[0])
+				#print(data_input, data_labels)
+				#print('data_input长度:',len(data_input))
+				
+				X[i,0:len(data_input)] = data_input
+				#print('data_labels长度:',len(data_labels))
+				#print(data_labels)
+				y[i,0:len(data_labels)] = data_labels
+				y_2kinds[i,0:len(y_2kind)] = y_2kind
+				y_odds[i,0:len(y_odd)] = y_odd
+				#print(data_labels, y2[i])
+				#print(i,y[i].shape)
+				#y[i] = y[i].T
+				#print(i,y[i].shape)
+				#label_length.append([len(data_labels)])
+			
+			#label_length = np.array(label_length)
+			#input_length = np.array(input_length)
+			y_2kinds = np.array(y_2kinds)
+			y_odds = np.array(y_odds)
+			yield X, [y_2kinds]
+			#return X, [y,y_2kinds,y_odds]
+			#images, y, y_2kinds, y_odds = [], [], [], []
+		pass
+
 
 	def data_genetator_4_mnist_noise(self, batch_size=100, img_length = 28*28):
 		'''
