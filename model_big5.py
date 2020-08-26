@@ -7,10 +7,14 @@ from keras.optimizers import SGD, Adadelta, Adam
 from keras.losses import categorical_crossentropy
 from keras.datasets import mnist
 from keras.utils import to_categorical
-from keras.utils import np_utils , plot_model
-from tensorflow.keras.callbacks import TensorBoard
-import tensorflow as tf
 
+from sklearn.metrics import confusion_matrix
+from keras import backend as K
+from keras.utils import np_utils
+#from keras.utils import np_utils , plot_model
+#from tensorflow.keras.callbacks import TensorBoard
+from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import Convolution2D, MaxPooling2D
 
 import platform as plat
 import os, sys
@@ -81,7 +85,7 @@ class ModelMnist():
 						loss=losses,
 						metrics={ 'bigger5_output': 'accuracy'})
 		model.summary()
-		plot_model(model, abspath + 'mnist_model'+os.sep + 'm' + ModelName + os.sep + './model.png',show_shapes=True)
+		#plot_model(model, abspath + 'mnist_model'+os.sep + 'm' + ModelName + os.sep + './model.png',show_shapes=True)
 		
 		return model
 	
@@ -124,7 +128,7 @@ class ModelMnist():
 		#两步轻松实现在Keras中使用Tensorboard - 简书
 		#https: // www.jianshu.com / p / b0e98ee80a49
 		NAME = 'mnist-CNN-{}'.format(time.asctime( time.localtime(time.time()) ))
-		tensorboard = TensorBoard(log_dir='mnist_model'+os.sep + 'logs' + os.sep + '{}'.format(NAME))
+		#tensorboard = TensorBoard(log_dir='mnist_model'+os.sep + 'logs' + os.sep + '{}'.format(NAME))
 		#tensorboard --logdir ./mnist_model/logs
 
 		
@@ -137,7 +141,7 @@ class ModelMnist():
 					# data_genetator是一个生成器函数
 					
 					#self._model.fit_generator(yielddatas, save_step, nb_worker=2)
-					self._model.fit_generator(yielddatas, save_step, callbacks=[tensorboard])
+					self._model.fit_generator(yielddatas, save_step) #, callbacks=[tensorboard])
 					n_step += 1
 				except StopIteration:
 					print('[error] generator error. please check data format.')
@@ -318,6 +322,8 @@ class ModelMnist():
 		'''
 		保存模型参数
 		'''
+		dir1,fname =  os.path.split(filename)
+		os.makedirs(dir1, exist_ok=True)
 		self._model.save_weights(filename + comment + '.model')
 		#self.model.save_weights(filename + comment + '.model.base')
 		# 需要安装 hdf5 模块
